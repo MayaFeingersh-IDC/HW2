@@ -45,21 +45,48 @@ isSubsequenceOf xs@(x:xs') (y:ys)
 type Phrase = String
 data Query = All [Query] | Any [Query] | None [Query] | Literal Phrase deriving Show
 type Document = String
-findDocuments :: Query -> [Document] -> ([Document], [Document])
+--Helper
+matches :: Query -> Document -> Bool
+matches (Literal phrase) document = phrase `isInfixOf` document
+matches (All queries) document = all (`matches` document) queries
+matches (Any queries) document = any (`matches` document) queries
+matches (None queries) document = not (any (`matches` document) queries)
 
+findDocuments :: Query -> [Document] -> ([Document], [Document])
+findDocuments query documents = foldr partitioner ([], []) documents
+  where
+    partitioner doc (matches, nonmatches)
+      | matches query doc = (doc:matches, nonmatches)
+      | otherwise         = (matches, doc:nonmatches)
 
 -- Section 3: InfiniteList
 data InfiniteList a = a :> InfiniteList a
 infixr 3 :>
 
 itoList :: InfiniteList a -> [a]
+itoList (x :> xs) = x : itoList xs
 
 irepeat :: a -> InfiniteList a
+irepeat x = x :> irepeat x
+
 iiterate :: (a -> a) -> a -> InfiniteList a
+iiterate f x = x :> iiterate f (f x)
+
 icycle :: [a] -> InfiniteList a
+icycle [] = error "Cannot cycle an empty list"
+icycle xs = go xs
+  where
+    go []     = go xs
+    go (y:ys) = y :> go ys
 
 naturals :: InfiniteList Int
+naturals = iiterate (+1) 0
+--Helper
+interleave :: InfiniteList a -> InfiniteList a -> InfiniteList a
+interleave (x :> xs) ys = x :> interleave ys xs
+
 integers :: InfiniteList Int
+integers = interleave naturals (iiterate negate 0)
 
 imap :: (a -> b) -> InfiniteList a -> InfiniteList b
 iscan :: (a -> b -> b) -> b -> InfiniteList a -> InfiniteList b
