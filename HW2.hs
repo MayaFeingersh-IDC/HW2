@@ -55,9 +55,9 @@ matches (None queries) document = not (any (`matches` document) queries)
 findDocuments :: Query -> [Document] -> ([Document], [Document])
 findDocuments query documents = foldr partitioner ([], []) documents
   where
-    partitioner doc (matches, nonmatches)
-      | matches query doc = (doc:matches, nonmatches)
-      | otherwise         = (matches, doc:nonmatches)
+    partitioner doc (matchedDocs, nonMatchedDocs)
+      | matches query doc = (doc : matchedDocs, nonMatchedDocs)
+      | otherwise         = (matchedDocs, doc : nonMatchedDocs)
 
 -- Section 3: InfiniteList
 data InfiniteList a = a :> InfiniteList a
