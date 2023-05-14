@@ -53,7 +53,7 @@ matches (Any queries) document = any (`matches` document) queries
 matches (None queries) document = not (any (`matches` document) queries)
 
 findDocuments :: Query -> [Document] -> ([Document], [Document])
-findDocuments query documents = foldr partitioner ([], []) documents
+findDocuments query = foldr partitioner ([], [])
   where
     partitioner doc (matchedDocs, nonMatchedDocs)
       | matches query doc = (doc : matchedDocs, nonMatchedDocs)
@@ -69,39 +69,56 @@ itoList (x :> xs) = x : itoList xs
 irepeat :: a -> InfiniteList a
 irepeat x = x :> irepeat x
 
+-- !!!!!!!! test starts from 1 instead of 2 !!!!!!!!!!!!!!
 iiterate :: (a -> a) -> a -> InfiniteList a
 iiterate f x = x :> iiterate f (f x)
 
 icycle :: [a] -> InfiniteList a
-icycle [] = error "Cannot cycle an empty list"
+icycle [] = go []
+  where
+    go xs = go xs
 icycle xs = go xs
   where
     go []     = go xs
-    go (y:ys) = y :> go ys
+    go (y:ys) = y :> go (ys ++ xs)
+
+
+
 
 naturals :: InfiniteList Int
 naturals = iiterate (+1) 0
 
-interleave :: InfiniteList a -> InfiniteList a -> InfiniteList a
-interleave (x :> xs) ys = x :> interleave ys xs
-
 integers :: InfiniteList Int
-integers = interleave naturals (iiterate negate 0)
+integers = iiterate nextInteger 0
+  where
+    nextInteger :: Int -> Int
+    nextInteger n
+      | n > 0 = -n
+      | otherwise = -n + 1
+
+
+
 
 imap :: (a -> b) -> InfiniteList a -> InfiniteList b
 imap f (x :> xs) = f x :> imap f xs
 
 iscan :: (a -> b -> b) -> b -> InfiniteList a -> InfiniteList b
-iscan f acc (x :> xs) = acc :> iscan f (f x acc) xs
+iscan f acc (x :> xs) = newAcc :> iscan f newAcc xs
+  where
+    newAcc = f x acc
 
 izip :: InfiniteList a -> InfiniteList b -> InfiniteList (a, b)
 izip (x :> xs) (y :> ys) = (x, y) :> izip xs ys
+
+interleave :: InfiniteList a -> InfiniteList a -> InfiniteList a
+interleave (x :> xs) ys = x :> interleave ys xs
 
 iinits :: InfiniteList a -> InfiniteList [a]
 iinits xs = [] :> imap (\(ys, y) -> ys ++ [y]) (izip (iinits xs) xs)
 
 itails :: InfiniteList a -> InfiniteList (InfiniteList a)
-itails xs@(_ :> xs') = xs :> itails xs'
+itails (_ :> xs) = xs :> itails xs
+
 
 -- Bonus: if you don't wish to implement this, simply write ifind = undefined
 ifind :: forall a. (a -> Bool) -> InfiniteList (InfiniteList a) -> Bool
@@ -144,7 +161,7 @@ fromListLevelOrder xs = let (t, _) = buildTree xs in t
   where
     buildTree :: [a] -> (Tree a, [a])
     buildTree [] = (EmptyTree, [])
-    buildTree (x:xs') = 
+    buildTree (x:xs') =
       let (left, remaining1) = buildTree xs'
           (right, remaining2) = buildTree remaining1
       in (Tree left x right, remaining2)
