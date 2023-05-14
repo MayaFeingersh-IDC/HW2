@@ -81,7 +81,7 @@ icycle xs = go xs
 
 naturals :: InfiniteList Int
 naturals = iiterate (+1) 0
---Helper
+
 interleave :: InfiniteList a -> InfiniteList a -> InfiniteList a
 interleave (x :> xs) ys = x :> interleave ys xs
 
@@ -89,22 +89,61 @@ integers :: InfiniteList Int
 integers = interleave naturals (iiterate negate 0)
 
 imap :: (a -> b) -> InfiniteList a -> InfiniteList b
+imap f (x :> xs) = f x :> imap f xs
+
 iscan :: (a -> b -> b) -> b -> InfiniteList a -> InfiniteList b
+iscan f acc (x :> xs) = acc :> iscan f (f x acc) xs
 
 izip :: InfiniteList a -> InfiniteList b -> InfiniteList (a, b)
-interleave :: InfiniteList a -> InfiniteList a -> InfiniteList a
+izip (x :> xs) (y :> ys) = (x, y) :> izip xs ys
 
 iinits :: InfiniteList a -> InfiniteList [a]
+iinits xs = [] :> imap (\(ys, y) -> ys ++ [y]) (izip (iinits xs) xs)
+
 itails :: InfiniteList a -> InfiniteList (InfiniteList a)
+itails xs@(x :> xs') = xs :> itails xs'
 
 -- Bonus: if you don't wish to implement this, simply write ifind = undefined
 ifind :: forall a. (a -> Bool) -> InfiniteList (InfiniteList a) -> Bool
-
+ifind = undefined
 
 -- Section 4: Binary trees (no necessarily search trees)
 data Tree a = EmptyTree | Tree (Tree a) a (Tree a) deriving Show
 preOrder :: Tree a -> [a]
+preOrder EmptyTree = []
+preOrder (Tree left x right) = [x] ++ preOrder left ++ preOrder right
+
 postOrder :: Tree a -> [a]
+postOrder EmptyTree = []
+postOrder (Tree left x right) = postOrder left ++ postOrder right ++ [x]
+
 inOrder :: Tree a -> [a]
+inOrder EmptyTree = []
+inOrder (Tree left x right) = inOrder left ++ [x] ++ inOrder right
+
 levelOrder :: Tree a -> [a]
+levelOrder t = loAux [t]
+
+--Helpers
+loAux :: [Tree a] -> [a]
+loAux [] = []
+loAux xs = map nodeValue xs ++ loAux (concatMap children xs)
+
+nodeValue :: Tree a -> a
+nodeValue (Tree _ x _) = x
+
+children :: Tree a -> [Tree a]
+children EmptyTree = []
+children (Tree left _ right) = filter (/= EmptyTree) [left, right]
+--Helpers End
+
 fromListLevelOrder :: [a] -> Tree a
+fromListLevelOrder [] = EmptyTree
+fromListLevelOrder xs = let (t, _) = buildTree xs in t
+  where
+    buildTree :: [a] -> (Tree a, [a])
+    buildTree [] = (EmptyTree, [])
+    buildTree (x:xs) = 
+      let (left, remaining1) = buildTree xs
+          (right, remaining2) = buildTree remaining1
+      in (Tree left x right, remaining2)
