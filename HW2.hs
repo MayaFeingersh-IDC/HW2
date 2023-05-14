@@ -101,7 +101,7 @@ iinits :: InfiniteList a -> InfiniteList [a]
 iinits xs = [] :> imap (\(ys, y) -> ys ++ [y]) (izip (iinits xs) xs)
 
 itails :: InfiniteList a -> InfiniteList (InfiniteList a)
-itails xs@(x :> xs') = xs :> itails xs'
+itails xs@(_ :> xs') = xs :> itails xs'
 
 -- Bonus: if you don't wish to implement this, simply write ifind = undefined
 ifind :: forall a. (a -> Bool) -> InfiniteList (InfiniteList a) -> Bool
@@ -131,10 +131,11 @@ loAux xs = map nodeValue xs ++ loAux (concatMap children xs)
 
 nodeValue :: Tree a -> a
 nodeValue (Tree _ x _) = x
+nodeValue EmptyTree = error "Cannot extract node value from an EmptyTree"
 
 children :: Tree a -> [Tree a]
 children EmptyTree = []
-children (Tree left _ right) = filter (/= EmptyTree) [left, right]
+children (Tree left _ right) = [left, right]
 --Helpers End
 
 fromListLevelOrder :: [a] -> Tree a
@@ -143,7 +144,7 @@ fromListLevelOrder xs = let (t, _) = buildTree xs in t
   where
     buildTree :: [a] -> (Tree a, [a])
     buildTree [] = (EmptyTree, [])
-    buildTree (x:xs) = 
-      let (left, remaining1) = buildTree xs
+    buildTree (x:xs') = 
+      let (left, remaining1) = buildTree xs'
           (right, remaining2) = buildTree remaining1
       in (Tree left x right, remaining2)
