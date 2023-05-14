@@ -28,7 +28,7 @@ isInfixOf xs ys = any (isPrefixOf xs) (tails ys)
 
 --Helper
 tails :: [a] -> [[a]]
-tails "" = [""]
+tails [] = [[]]
 tails xs@(_:xs') = xs : tails xs'
 
 isSuffixOf :: String -> String -> Bool
