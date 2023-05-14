@@ -21,10 +21,25 @@ import Prelude (Bool (..), Char, Either (..), Enum (..), Eq (..), Int, Maybe (..
 
 -- Section 1: String matching
 isPrefixOf :: String -> String -> Bool
-isInfixOf :: String -> String -> Bool
-isSuffixOf :: String -> String -> Bool
-isSubseuenceOf :: String -> String -> Bool
+isPrefixOf prefix suffix = take (length prefix) suffix == prefix
 
+isInfixOf :: String -> String -> Bool
+isInfixOf xs ys = any (isPrefixOf xs) (tails ys)
+
+--Helper
+tails :: [a] -> [[a]]
+tails "" = [""]
+tails xs@(_:xs') = xs : tails xs'
+
+isSuffixOf :: String -> String -> Bool
+isSuffixOf xs ys = isPrefixOf (reverse xs) (reverse ys)
+
+isSubsequenceOf :: String -> String -> Bool
+isSubsequenceOf "" _ = True
+isSubsequenceOf _ "" = False
+isSubsequenceOf xs@(x:xs') (y:ys)
+  | x == y    = isSubsequenceOf xs' ys
+  | otherwise = isSubsequenceOf xs ys
 
 -- Section 2: Document searching
 type Phrase = String
